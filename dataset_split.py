@@ -1,66 +1,44 @@
 import os
-import glob
-import random
+import csv
 import json
+from collections import defaultdict
 
-def split_images_to_json(
-    image_dir: str,
+def split_images_by_label_csv(
+    csv_path: str,
     output_json: str,
-    ratios: tuple = (0.7, 0.1, 0.2),
-    seed: int = 42
+    root_dir: str,                # 新增：所有相对路径的基准目录
+    train_per_label: int = 45,
+    val_per_label: int = 5,
+    test_per_label: int = 5
 ):
-    """
-    按 ratios (train, val, test) 划分 image_dir 下的所有图片，
-    并保存到 output_json 文件中。
-    """
-    # 支持的图片后缀
-    exts = ["jpg", "jpeg", "png", "bmp", "gif"]
-    # 收集所有图片路径
-    images = []
-    for ext in exts:
-        images.extend(glob.glob(os.path.join(image_dir, f"*.{ext}")))
-    images = sorted(images)  # 保证一致的初始顺序
+    label_to_paths = defaultdict(list)
+    with open(csv_path, newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            rel_path = row['image']
+            # 把相对路径拼到 root_dir，再取绝对路径
+            abs_path = os.path.abspath(os.path.join(root_dir, rel_path))
+            label_to_paths[row['label']].append(abs_path)
 
-    # 打乱
-    random.seed(seed)
-    random.shuffle(images)
+    train_list, val_list, test_list = [], [], []
+    for label, paths in label_to_paths.items():
+        paths = sorted(paths)
+        if len(paths) < (train_per_label + val_per_label + test_per_label):
+            raise ValueError(f"标签 {label} 数量不足")
+        train_list.extend(paths[:train_per_label])
+        val_list.extend(  paths[train_per_label:train_per_label + val_per_label])
+        test_list.extend( paths[train_per_label + val_per_label:
+                               train_per_label + val_per_label + test_per_label])
 
-    n = len(images)
-    n_train = int(n * ratios[0])
-    n_val   = int(n * ratios[1])
-    # n_test 剩余
-    n_test  = n - n_train - n_val
-
-    train_imgs = images[:n_train]
-    val_imgs   = images[n_train:n_train + n_val]
-    test_imgs  = images[n_train + n_val:]
-
-    assert len(train_imgs) == n_train
-    assert len(val_imgs)   == n_val
-    assert len(test_imgs)  == n_test
-
-    # 构造字典
-    split_dict = {
-        "train": train_imgs,
-        "val":   val_imgs,
-        "test":  test_imgs
-    }
-
-    # 写入 JSON
     with open(output_json, "w", encoding="utf-8") as f:
-        json.dump(split_dict, f, ensure_ascii=False, indent=2)
+        json.dump({"train": train_list, "val": val_list, "test": test_list},
+                  f, ensure_ascii=False, indent=2)
 
-    print(f"共 {n} 张图片，划分为：")
-    print(f"  train: {n_train}")
-    print(f"  val:   {n_val}")
-    print(f"  test:  {n_test}")
-    print(f"结果保存在：{output_json}")
+    print(f"train: {len(train_list)}, val: {len(val_list)}, test: {len(test_list)}")
 
 if __name__ == "__main__":
-    # 示例用法：将当前目录下的 images/ 划分后保存到 splits.json
-    split_images_to_json(
-        image_dir="E:\HFUT\大三下\深度学习导论\English-Handwritten-Characters-Dataset\Img",
+    split_images_by_label_csv(
+        csv_path="/home/SSD1_4T/datasets/English-Handwritten-Characters-Dataset/english.csv",
         output_json="splits.json",
-        ratios=(0.7, 0.1, 0.2),
-        seed=123
+        root_dir="/home/SSD1_4T/datasets/English-Handwritten-Characters-Dataset/"
     )

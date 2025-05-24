@@ -18,7 +18,7 @@ class LeNet5(nn.Module):
 
         # Fully connected layers
         # After conv/pool: feature map size = ((28-4)/2 - 4)/2 = 4 => 16*4*4
-        self.fc1 = nn.Linear(in_features=16 * 4 * 4, out_features=120)
+        self.fc1 = nn.Linear(in_features=16 * 13 * 9, out_features=120)
         self.tanh3 = nn.Tanh()
 
         self.fc2 = nn.Linear(in_features=120, out_features=84)

@@ -11,7 +11,8 @@ from torchvision import transforms
 
 from dataset import CSVJSONImageDataset
 
-from  LeNet_5 import  LeNet5
+from LeNet_5 import  LeNet5
+from compared_nets import UNet
 def parse_args():
     parser = argparse.ArgumentParser(description="Training script for handwritten digit classification")
     parser.add_argument('--data_json', type=str, default='splits.json',
@@ -38,15 +39,15 @@ def main():
 
     # Data transforms
     transform = transforms.Compose([
-        transforms.Resize((28, 28)),
+        transforms.Resize((64, 48)),
         transforms.ToTensor(),
         transforms.Normalize((0.5,), (0.5,))
     ])
 
     # Datasets and loaders
-    train_dataset = CSVJSONImageDataset(splits_json=args.data_json, split='train', csv_path=r"E:\HFUT\大三下\深度学习导论\English-Handwritten-Characters-Dataset\english.csv",
+    train_dataset = CSVJSONImageDataset(splits_json=args.data_json, split='train', csv_path=r"/home/SSD1_4T/datasets/English-Handwritten-Characters-Dataset/english.csv",
                                         transform=transform)
-    val_dataset   = CSVJSONImageDataset(splits_json=args.data_json, split='val', csv_path=r"E:\HFUT\大三下\深度学习导论\English-Handwritten-Characters-Dataset\english.csv",
+    val_dataset   = CSVJSONImageDataset(splits_json=args.data_json, split='val', csv_path=r"/home/SSD1_4T/datasets/English-Handwritten-Characters-Dataset/english.csv",
                                         transform=transform)
 
     print(len(train_dataset))
@@ -62,7 +63,10 @@ def main():
     # TODO: replace `YourModelClass` with the actual model class
     model = LeNet5()
     model = model.to(device)
-
+    model_name = model._get_name()
+    save_path = os.path.join(args.save_dir, model_name)
+    os.makedirs(save_path, exist_ok=True)
+    
     # Loss and optimizer
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
@@ -119,7 +123,7 @@ def main():
         is_best = val_acc > best_val_acc
         if is_best:
             best_val_acc = val_acc
-            save_path = os.path.join(args.save_dir, f"best_model_epoch{epoch}.pth")
+            save_path = os.path.join(args.save_dir, model_name, f"{model_name}_best_model.pth")
             torch.save(model.state_dict(), save_path)
             print(f"New best val acc: {best_val_acc:.4f}. Model saved to {save_path}\n")
 
