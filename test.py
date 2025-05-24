@@ -7,7 +7,7 @@ from torchvision import transforms
 
 from dataset import CSVJSONImageDataset
 from LeNet_5 import LeNet5
-
+from compared_nets.UNet import UNetClassifier
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Test script for handwritten character classification")
@@ -17,11 +17,11 @@ def parse_args():
                         default="/home/SSD1_4T/datasets/English-Handwritten-Characters-Dataset/english.csv",
                         help='Path to the CSV file with filename,label_char columns')
     parser.add_argument('--checkpoint', type=str, required=False,
-                        default="/home/lyh/models/DL_Project1/checkpoints/LeNet5/LeNet5_best_model.pth",
+                        default="/home/lyh/models/DL_Project1/checkpoints/UNetClassifier/UNetClassifier_best_model.pth",
                         help='Path to the saved model checkpoint (.pth)')
-    parser.add_argument('--batch_size', type=int, default=64,
+    parser.add_argument('--batch_size', type=int, default=1,
                         help='Batch size for testing')
-    parser.add_argument('--num_workers', type=int, default=4,
+    parser.add_argument('--num_workers', type=int, default=16,
                         help='Number of DataLoader worker processes')
     return parser.parse_args()
 
@@ -55,7 +55,8 @@ def main():
     print(f"Loaded {len(test_dataset)} test samples.")
 
     # 3) Model
-    model = LeNet5()
+    # model = LeNet5()
+    model = UNetClassifier()
     model.load_state_dict(torch.load(args.checkpoint, map_location=device))
     model = model.to(device)
     model.eval()
